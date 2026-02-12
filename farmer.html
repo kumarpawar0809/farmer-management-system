@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Farmer Management System</title>
+
+<style>
+body {
+	font-family: Arial, sans-serif;
+	text-align: center;
+	margin-top: 20px;
+	background-color: #f4f6f9;
+}
+
+h2 {
+	color: #2c3e50;
+}
+
+button {
+	padding: 8px 15px;
+	margin: 5px;
+	cursor: pointer;
+	background-color: #3498db;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	font-weight: bold;
+}
+
+button:hover {
+	background-color: #2980b9;
+}
+
+input {
+	padding: 7px;
+	margin: 5px;
+	border-radius: 6px;
+	border: 1px solid #ccc;
+}
+
+table {
+	margin: 30px auto;
+	border-collapse: collapse;
+	width: 95%;
+	background-color: white;
+}
+
+th {
+	background-color: #2c3e50;
+	color: white;
+	padding: 10px;
+}
+
+td {
+	border: 1px solid #ddd;
+	padding: 8px;
+}
+
+tr:nth-child(even) {
+	background-color: #f2f2f2;
+}
+
+#resultBox {
+	font-weight: bold;
+	margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+	<h2>Farmer Management System</h2>
+
+	<!-- ADD FARMER -->
+	<h3>Add Farmer</h3>
+	<input type="text" id="addName" placeholder="Name">
+	<input type="number" id="addAge" placeholder="Age">
+	<input type="text" id="addMobile" placeholder="Mobile">
+	<input type="text" id="addVillage" placeholder="Village">
+	<input type="number" id="addLand" placeholder="Land Area">
+	<button onclick="addFarmer()">Add</button>
+
+	<hr>
+
+	<!-- UPDATE FARMER -->
+	<h3>Update Farmer</h3>
+
+	<input type="number" id="updateId" placeholder="Enter ID">
+	<button onclick="findForUpdate()">Find</button>
+
+	<br>
+	<br>
+
+	<input type="text" id="updateName" placeholder="Name">
+	<input type="number" id="updateAge" placeholder="Age">
+	<input type="text" id="updateMobile" placeholder="Mobile">
+	<input type="text" id="updateVillage" placeholder="Village">
+	<input type="number" id="updateLand" placeholder="Land Area">
+
+	<button onclick="updateFarmer()">Update</button>
+
+
+	<hr>
+
+	<!-- DELETE -->
+	<h3>Delete Farmer</h3>
+	<input type="number" id="deleteId" placeholder="ID">
+	<button onclick="deleteFarmer()">Delete</button>
+
+	<hr>
+
+	<!-- FIND BY ID -->
+	<h3>Find Farmer By ID</h3>
+	<input type="number" id="findId" placeholder="ID">
+	<button onclick="findById()">Find</button>
+
+	<hr>
+
+	<button onclick="getAll()">Get All</button>
+	<button onclick="countFarmers()">Count</button>
+	<button onclick="getTotalArea()">Total Land</button>
+	<button onclick="getMaxAge()">Max Age</button>
+	<button onclick="getMinAge()">Min Age</button>
+	<button onclick="sortByName()">Sort By Name</button>
+
+	<hr>
+
+	<!-- SEARCH -->
+	<input type="text" id="name" placeholder="Search Name">
+	<button onclick="searchByName()">Search</button>
+
+	<input type="number" id="minAge" placeholder="Min Age">
+	<input type="number" id="maxAge" placeholder="Max Age">
+	<button onclick="searchByAge()">Search Age</button>
+
+	<input type="number" id="landArea" placeholder="Land Area >">
+	<button onclick="searchByLandArea()">Search Land</button>
+
+	<div id="resultBox"></div>
+
+	<table id="farmerTable" style="display: none;">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Name</th>
+				<th>Age</th>
+				<th>Mobile</th>
+				<th>Village</th>
+				<th>Land Area</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+
+	<script>
+
+const baseUrl = "http://localhost:8080/farmers";
+
+function displayTable(data) {
+    const table = document.getElementById("farmerTable");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    document.getElementById("resultBox").innerHTML = "";
+
+    if (!Array.isArray(data)) data = [data];
+
+    data.forEach(f => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${f.id}</td>
+            <td>${f.name}</td>
+            <td>${f.age}</td>
+            <td>${f.mobile}</td>
+            <td>${f.village}</td>
+            <td>${f.landArea}</td>
+        </tr>`;
+    });
+
+    table.style.display = "table";
+}
+
+function displayMessage(msg) {
+    document.getElementById("farmerTable").style.display = "none";
+    document.getElementById("resultBox").innerHTML = msg;
+}
+
+/* ================= CRUD ================= */
+
+function addFarmer() {
+    const farmer = {
+        name: addName.value,
+        age: addAge.value,
+        mobile: addMobile.value,
+        village: addVillage.value,
+        landArea: addLand.value
+    };
+
+    fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(farmer)
+    })
+    .then(res => res.json())
+    .then(data => {
+        displayMessage("Farmer Added Successfully");
+        displayTable(data);
+    });
+}
+
+function updateFarmer() {
+
+    const id = document.getElementById("updateId").value;
+
+    if (!id) {
+        displayMessage("ID is required");
+        return;
+    }
+
+    const farmer = {
+        name: document.getElementById("updateName").value,
+        age: document.getElementById("updateAge").value,
+        mobile: document.getElementById("updateMobile").value,
+        village: document.getElementById("updateVillage").value,
+        landArea: document.getElementById("updateLand").value
+    };
+
+    fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(farmer)
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Farmer ID Not Found");
+        }
+
+        // Check if response has body
+        return res.text();
+    })
+    .then(text => {
+        if (!text) {
+            displayMessage("Updated Successfully");
+            return;
+        }
+
+        const data = JSON.parse(text);
+        displayMessage("Farmer Updated Successfully");
+        displayTable(data);
+    })
+    .catch(error => {
+        displayMessage(error.message);
+    });
+}
+
+
+function findForUpdate() {
+
+    const id = document.getElementById("updateId").value;
+
+    if (!id) {
+        displayMessage("Please enter ID first");
+        return;
+    }
+
+    fetch(`${baseUrl}/${id}`)
+    .then(res => {
+        if (!res.ok) {
+            displayMessage("Farmer Not Found");
+            return;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data) {
+            document.getElementById("updateName").value = data.name;
+            document.getElementById("updateAge").value = data.age;
+            document.getElementById("updateMobile").value = data.mobile;
+            document.getElementById("updateVillage").value = data.village;
+            document.getElementById("updateLand").value = data.landArea;
+
+            // Make ID readonly after finding
+            document.getElementById("updateId").readOnly = true;
+
+            displayMessage("Farmer Found. You can update now.");
+        }
+    });
+}
+
+function deleteFarmer() {
+    fetch(`${baseUrl}/${deleteId.value}`, { method: "DELETE" })
+        .then(res => res.text())
+        .then(msg => displayMessage(msg));
+}
+
+function findById() {
+    fetch(`${baseUrl}/${findId.value}`)
+        .then(res => {
+            if (!res.ok) {
+                displayMessage("Farmer Not Found");
+                return;
+            }
+            return res.json();
+        })
+        .then(data => { if(data) displayTable(data); });
+}
+
+/* ================= OTHER METHODS ================= */
+
+function getAll() {
+    fetch(baseUrl)
+        .then(res => res.json())
+        .then(data => displayTable(data));
+}
+
+function searchByName() {
+    fetch(`${baseUrl}/search/by-name/${name.value}`)
+        .then(res => res.json())
+        .then(data => displayTable(data));
+}
+
+function searchByAge() {
+    fetch(`${baseUrl}/search/by-age/${minAge.value}/${maxAge.value}`)
+        .then(res => res.json())
+        .then(data => displayTable(data));
+}
+
+function searchByLandArea() {
+    fetch(`${baseUrl}/search/by-land-area/${landArea.value}`)
+        .then(res => res.json())
+        .then(data => displayTable(data));
+}
+
+function sortByName() {
+    fetch(`${baseUrl}/sort/by-name`)
+        .then(res => res.json())
+        .then(data => displayTable(data));
+}
+
+function countFarmers() {
+    fetch(`${baseUrl}/count`)
+        .then(res => res.text())
+        .then(data => displayMessage("Total Farmers: " + data));
+}
+
+function getTotalArea() {
+    fetch(`${baseUrl}/total-area`)
+        .then(res => res.text())
+        .then(data => displayMessage("Total Land Area: " + data));
+}
+
+function getMaxAge() {
+    fetch(`${baseUrl}/max-age`)
+        .then(res => res.text())
+        .then(data => displayMessage("Max Age: " + data));
+}
+
+function getMinAge() {
+    fetch(`${baseUrl}/min-age`)
+        .then(res => res.text())
+        .then(data => displayMessage("Min Age: " + data));
+}
+
+</script>
+
+</body>
+</html>
